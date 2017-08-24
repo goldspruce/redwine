@@ -1,0 +1,1212 @@
+Project 4 - Red Wine by Robert Lee
+========================================================
+
+```{r packages_global_options}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+library(ggplot2)
+library(gridExtra)
+```
+
+```{r echo=FALSE, Load_the_Data}
+redwine <- read.csv('wineQualityReds.csv')
+```
+
+# Red Wine dataframe (redwine)
+First I take a look at the head and the structure of the dataframe. The info sheet gives us the units, for instance grams per cubic decimeter, for many of the columns, % by volume for alcohol, which is a unit most of us are familiar with, density (water is ~1) and quality, apparently a unitless integer between 0 and 10. There are 13 variables. One of them is the row number (column X), so I remove that as extraneous.
+'redwine$X <- NULL'
+
+The structure of the dataframe below reveals no surprises, including that the quality rating is indeed an integer, and that the other colums are numbers (floats) with zero or one or two decimal places.
+
+tHERE ARE `r nrow(redwine)` rows in the dataset
+
+```{r echo=FALSE, Univariate_Plots}
+head(redwine)
+```
+
+```{r echo=FALSE}
+str(redwine)
+```
+```{r echo=FALSE}
+redwine$X <- NULL
+str(redwine)
+```
+
+# Univariate Analysis
+Wine experts, oenelogists, sommeliers might care about some of these scientific variables, but the average person just cares about taste and quality. So let's look at that. Here are 250 data points. Most of the values are towards the middle of th 0-10 scale. I wonder if this is becasue human judges tend to pick toward the middle of the scale and more rarely give out more extreme scores, or because of something else.
+
+```{r echo=FALSE}
+cat('Head: quality\n')
+head(redwine$quality,20)
+```
+
+### Wine Ratings 3-8
+The histogram of all the data points goes only from 3-8. This is a bit surprising, but then I remember that all this data is only from one specific type of wine, which may not have any high quality wines at all. From the data overview:
+
+"the datasets are related to red and white variants of the Portuguese "Vinho Verde" wine."
+
+I confirm this range with the summary and the histogram. So rather than representing some kind of judging bias toward middle-tier scores, this may be an artifcat of the wine selected for analysis.
+
+```{r echo=FALSE}
+summary(redwine$quality)
+```
+
+```{r echo=FALSE}
+ggplot(aes(quality), data = redwine) + ggtitle("Quality") +
+  geom_bar()
+```
+
+### Acidity
+
+Let's next look at the 3 measures of acidity. The mean and range of Fixed Acidity are about an order of magnitude greater than Volatile Acidity and Citric Acid. Unless the latter two types of acid are much stronger than the first (unlikely), then the effect the first acidity on pH should also be about an order of magnitude stronger. So we should see a stronger correlation between the first and pH, and who knows, perhaps quality, in the bivariate analysis.
+
+### 3 acids
+Fixed acidity and volatile acidity are fairly normal with right skew. For citric acid, gnoring the zero value (which might represent bad data or "unknown" values defaulted to zero, this variable is fairly evenly distributed (what is the term for this?).
+
+### Summary, Range, IQR, Head
+Fixed acidity
+Volatile acidity
+Citric acid
+
+```{r echo=FALSE}
+cat('Fixed acidity:\n')
+cat('summary\n')
+summary(redwine$fixed.acidity)
+cat('range\n')
+max(redwine$fixed.acidity) - min(redwine$fixed.acidity)
+cat('IQR\n')
+IQR(redwine$fixed.acidity)
+cat('Volatile acidity:\n')
+cat('summary\n')
+summary(redwine$volatile.acidity)
+cat('range\n')
+max(redwine$volatile.acidity) - min(redwine$volatile.acidity)
+cat('IQR\n')
+IQR(redwine$volatile.acidity)
+cat('Citric acid:\n')
+cat('summary\n')
+summary(redwine$citric.acid)
+cat('range\n')
+max(redwine$citric.acid) - min(redwine$citric.acid)
+cat('IQR\n')
+IQR(redwine$citric.acid)
+```
+
+```{r echo=FALSE}
+cat('Head: fixed.acidity\n')
+head(redwine$fixed.acidity,20)
+cat('Head: volatile.acidity\n')
+head(redwine$volatile.acidity,20)
+cat('Head: citric.acid\n')
+head(redwine$citric.acid,20)
+```
+
+### New variable -  totalacid
+I decide it would be useful to add up all the acid values (they have the same units). Assuming again, that no one acid is much stronger than the others (which is reasonable), this total acid value is a simple proxy for the three separate values. At the same time, Fixed acid would be a similarly good proxy, since it is an order of magnitude greater than the others in terms of mean and range.
+
+### Summary, Range, IQR, Head
+Total acid
+
+```{r echo=FALSE}
+redwine$totalacid <- (round(10*(redwine$fixed.acidity + redwine$volatile.acidity + redwine$citric.acid)))/10
+cat('Summary\n')
+summary(redwine$totalacid)
+cat('range\n')
+max(redwine$totalacid) - min(redwine$totalacid)
+cat('IQR\n')
+IQR(redwine$totalacid)
+```
+```{r echo=FALSE}
+cat('Head: total.acid\n')
+head(redwine$totalacid,20)
+```
+### 4 acids
+Next I plot all four acid variables, including totalacid, which I created
+
+```{r echo=FALSE}
+ggplot(aes(fixed.acidity), data = redwine) + ggtitle("Fixed.Acidity") +
+  xlab('g/decimeter') + geom_bar(binwidth=.1) +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(breaks = seq(min(redwine$fixed.acidity),max(redwine$fixed.acidity),1))
+```
+```{r echo=FALSE}
+ggplot(aes(volatile.acidity), data = redwine) + ggtitle("Volatile.Acidity") +
+  xlab('g/decimeter') + geom_bar(binwidth=.02) +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(breaks = seq(min(redwine$volatile.acidity),max(redwine$volatile.acidity),0.1))
+```
+```{r echo=FALSE}
+ggplot(aes(citric.acid), data = redwine) + ggtitle("Citric.Acid") +
+  xlab('g/decimeter') + geom_bar(binwidth=.01) +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(breaks = seq(min(redwine$citric.acid),max(redwine$citric.acid),0.1))
+```
+
+```{r echo=FALSE}
+ggplot(aes(totalacid), data = redwine) + ggtitle("Total Acid") +
+  xlab('g/decimeter') + geom_bar(binwidth=.2) +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(breaks = seq(min(redwine$totalacid),max(redwine$totalacid),1))
+```
+
+### Plotting acids together
+I next plot these on the same scales to get a feel for the fact that indeed, total acid and fixed acidity are similar, and one can be somewhat interchangeable for each other.
+
+```{r echo=FALSE}
+fixed <- ggplot(aes(fixed.acidity), data = redwine) + ggtitle("Fixed.Acidity") +
+  xlab('g/decimeter') + geom_bar() +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(limits=c(0,11),breaks = seq(0,max(redwine$totalacid),1))
+
+volatile <- ggplot(aes(volatile.acidity), data = redwine) + ggtitle("Volatile.Acidity") +
+  xlab('g/decimeter') + geom_bar() +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(limits=c(0,11),breaks = seq(0,max(redwine$totalacid),1))
+
+citric <- ggplot(aes(citric.acid), data = redwine) + ggtitle("Citric.Acid") +
+  xlab('g/decimeter') + geom_bar() +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(limits=c(0,11),breaks = seq(0,max(redwine$totalacid),1))
+
+total <- ggplot(aes(totalacid), data = redwine) + ggtitle("Total Acid") +
+  xlab('g/decimeter') + geom_bar() +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(limits=c(0,11),breaks = seq(0,max(redwine$totalacid),1))
+
+grid.arrange(fixed,total,volatile,citric,ncol=1)
+
+```
+
+### Sugar, alcohol, density
+Next I look at
+(1) residual sugar (g/dm3)
+(2) alcohol (% by volume)
+(3) density (water ~ 1)
+
+### Summary, Range, IQR, Head
+
+```{r echo=FALSE}
+cat('Residual Sugar:\n')
+cat('summary\n')
+summary(redwine$residual.sugar)
+cat('range\n')
+max(redwine$residual.sugar) - min(redwine$residual.sugar)
+cat('IQR\n')
+IQR(redwine$residual.sugar)
+cat('Residual Alcohol:\n')
+cat('summary\n')
+summary(redwine$alcohol)
+cat('range\n')
+max(redwine$alcohol) - min(redwine$alcohol)
+cat('IQR\n')
+IQR(redwine$alcohol)
+cat('Density:\n')
+cat('summary\n')
+summary(redwine$density)
+cat('range\n')
+max(redwine$density) - min(redwine$density)
+cat('IQR\n')
+IQR(redwine$density)
+
+```
+
+```{r echo=FALSE}
+cat('Head: residual.sugar\n')
+head(redwine$residual.sugar,20)
+cat('Head: alcohol\n')
+head(redwine$alcohol,20)
+cat('Head: density\n')
+head(redwine$density,20)
+```
+
+### Stats
+The median of alcohol content is about 10%, which comports with my inutition about wine. Density, not surprisingly, is close to 1 (and generally below), as wine is mostly water.
+
+# Plot for Residual Sugar
+Fairly normal, with a few highly right-skewed values.
+
+```{r echo=FALSE}
+ggplot(aes(residual.sugar), data = redwine) + ggtitle("residual.sugar") +
+  xlab('g/decimeter') + geom_histogram(bins=nclass.Sturges(redwine$residual.sugar)) +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(breaks = seq(min(redwine$residual.sugar),max(redwine$residual.sugar),1))
+```
+
+### Plot for Alcohol
+Right-skewed
+
+```{r echo=FALSE}
+ggplot(aes(alcohol), data = redwine) + ggtitle("alcohol") +
+  xlab('g/decimeter') +  geom_histogram(bins=nclass.Sturges(redwine$alcohol)) +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(breaks = seq(min(redwine$alcohol),max(redwine$alcohol),1))
+```
+
+### Plot for density:
+Fairly normal
+
+```{r echo=FALSE}
+ggplot(aes(density), data = redwine) + ggtitle("density") +
+  xlab('g/decimeter') +  geom_histogram(bins=nclass.Sturges(redwine$density)) +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(breaks = seq(min(redwine$density),
+                                  max(redwine$density),.002))
+```
+
+### chlorides, free.sulfur.dioxide, total.sulfur.dioxide, pH
+Remaining Variables
+chlorides (sodium chloride - g / dm^3)
+free.sulfur.dioxide (mg / dm^3)
+total.sulfur.dioxide (mg / dm^3)
+pH (0-14)
+
+### Summary, Range, IQR, Head
+
+```{r echo=FALSE}
+summary(redwine$chlorides)
+max(redwine$chlorides) - min(redwine$chlorides)
+IQR(redwine$chlorides)
+summary(redwine$free.sulfur.dioxide)
+max(redwine$free.sulfur.dioxide) - min(redwine$free.sulfur.dioxide)
+IQR(redwine$free.sulfur.dioxide)
+summary(redwine$total.sulfur.dioxide)
+max(redwine$total.sulfur.dioxide) - min(redwine$total.sulfur.dioxide)
+IQR(redwine$total.sulfur.dioxide)
+summary(redwine$pH)
+max(redwine$pH) - min(redwine$pH)
+IQR(redwine$pH)
+```
+
+```{r echo=FALSE}
+cat('Head: chlorides\n')
+head(redwine$chlorides,20)
+cat('Head: total.sulfur.dioxide\n')
+head(redwine$total.sulfur.dioxide,20)
+cat('Head: free.sulfur.dioxide\n')
+head(redwine$free.sulfur.dioxide,20)
+cat('Head: pH\n')
+head(redwine$pH,20)
+```
+
+### Stats
+Don't know anything much about these features, so hard to make observations.
+
+# Plot for Chlorides
+The linear plot is right-skewed so I add a log_10 transformation.
+
+```{r echo=FALSE}
+ggplot(aes(chlorides), data = redwine) + ggtitle("chlorides") +
+  xlab('') + geom_histogram(bins=nclass.Sturges(redwine$chlorides)) +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(breaks = seq(min(redwine$chlorides),
+                                  max(redwine$chlorides),.05))
+```
+```{r echo=FALSE}
+ggplot(aes(chlorides), data = redwine) + ggtitle("chlorides scale_x_log10") +
+  xlab('') + geom_histogram(bins=nclass.Sturges(redwine$chlorides)) +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_log10(breaks = c(0.01, 0.05, 0.10, 0.15))
+```
+
+### Plot for total.sulfur.dioxide
+The linear plot is right-skewed so I add a log_10 transformation.
+
+```{r echo=FALSE}
+ggplot(aes(total.sulfur.dioxide), data = redwine) +
+  ggtitle("total.sulfur.dioxide") +
+  xlab('g/decimeter') +
+  geom_histogram(bins=nclass.Sturges(redwine$total.sulfur.dioxide)) +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(breaks = seq(min(redwine$total.sulfur.dioxide),max(redwine$total.sulfur.dioxide),20))
+```
+```{r echo=FALSE}
+ggplot(aes(total.sulfur.dioxide), data = redwine) +
+  ggtitle("total.sulfur.dioxide") +
+  xlab('g/decimeter') +
+  geom_histogram(bins=nclass.Sturges(redwine$total.sulfur.dioxide)) +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_log10(breaks = c(10, 25, 50, 100, 150))
+```
+
+### Plot for free.sulfur.dioxide
+The linear plot is right-skewed so I add a log_10 transformation.
+
+```{r echo=FALSE}
+ggplot(aes(free.sulfur.dioxide), data = redwine) +
+  ggtitle("free.sulfur.dioxide") +
+  xlab('g/decimeter') +
+  geom_histogram(bins=nclass.Sturges(redwine$free.sulfur.dioxide)) +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(breaks = seq(min(redwine$free.sulfur.dioxide),max(redwine$free.sulfur.dioxide),2))
+```
+```{r echo=FALSE}
+ggplot(aes(free.sulfur.dioxide), data = redwine) +
+  ggtitle("free.sulfur.dioxide") +
+  xlab('g/decimeter') +
+  geom_histogram(bins=nclass.Sturges(redwine$free.sulfur.dioxide)) +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+    scale_x_log10(breaks = c(1, 10, 25, 50, 100, 150))
+```
+
+### Plot for pH
+Looks normal (note that pH is already log scale)
+
+```{r echo=FALSE}
+ggplot(aes(pH), data = redwine) + ggtitle("pH") +
+  xlab('g/decimeter') + geom_histogram(bins=nclass.Sturges(redwine$pH)) +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) +
+  scale_x_continuous(breaks = seq(min(redwine$pH),max(redwine$pH),.1))
+```
+
+# Univariate Analysis
+
+### What is the structure of your dataset?
+1599 rows of values, each corresponding to a wine. The variables (columns) are:
+
+```{r echo=FALSE}
+colnames(redwine)
+```
+
+### Variables
+I took a quick look at:
+"fixed.acidity"  
+"volatile.acidity"
+"citric.acid"  
+"residual.sugar"
+"density"
+"pH" 
+"alcohol"  
+
+I created the variable "totalacid" which is the sum of the 3 given acid values, and is close to "fixed.acidity" since the other two have very small values.
+
+And of course we looked at "quality", which is not a chemical measurement, like the others, but presumably reporting of quality of the wine by human judges.
+
+Unless you know a bit about the chemistry of wines, this univariate analysis is unlikely to be that informative.
+
+### What is/are the main feature(s) of interest in your dataset?
+Already discussed
+
+### What other features in the dataset do you think will help support your investigation into your feature(s) of interest?
+Since all the variables besides quality are chemical quantities, it's hard to have an intuition on how to think of them. But hopefully with this univariate analysis this will lead me to some interesting bivariate and mulitvariate analysis.
+
+### Did you create any new variables from existing variables in the dataset?
+I created $totalacid by summing fixed.acidity + volatile.acidity + citric.acid, rounded to 0.1
+
+### Of the features you investigated, were there any unusual distributions?
+
+I simply adjusted the scale_x_continuous limits and breaks to show all the data with appropriate labels on the graphs.
+
+# Bivariate Plots Section
+I have a little knowledge of biochemistry, so I used this knowledge to try some bivariate analysis. Yeast act by fermenting sugar to alcohol, so you think these might be inversely correlated, although the amount of starting sugar would also highly effect each. Also, since the density of alcohol is about 0.79, wine density might be inversely correlated with alocohol content. Sugar might increase density a bit, as dissolved solids generally increase the density of water.
+
+We can get a quick overview of all of the pairwise correlations with a correlations plot. Looking at quality, which is the feature that most people are most interested in (and is not an objective chemical variable), we see that nothing has a high correlation (near 1.0). This is not surprising to me, because I would assume that in a complex art like wine-making, there wouldn't be any single chemical feature that would be highly correlated with quality. We will discuss this more below.
+ 
+```{r echo=FALSE, fig.height=6, fig.width=6}
+library(GGally)
+ggcorr(redwine, method = c("pairwise", "pearson"))
+```
+
+# Pairwise Correlations
+Let's look at some of the pairwise correlations in detail.
+
+1. sugar v alcohol
+2. alcohol v density
+3. sugar v density 
+
+Pearsons r:
+1. 0.04207544
+2. -0.4961798
+3. 0.3552834
+
+r is the first is almost zero, so I'm guessing initial sugar content varies a lot. The second has a negative correlation as I suspected, and it indeed is fairly strong. The third has a modest correlation.
+
+```{r echo=FALSE, Bivariate_Plots}
+
+cor.test(redwine$residual.sugar,redwine$alcohol,method='pearson')
+cor.test(redwine$alcohol,redwine$density,method='pearson')
+cor.test(redwine$residual.sugar,redwine$density,method='pearson')
+
+```
+
+### Acids and pH
+Since pH is a measure of acidity, the acid content of the wine should show a strong correlation, at least for fixed acidity (which is most of the acid in the wine) and total acid. Note that lower pH means more acidic. 
+
+1. fixed acidity vs pH
+2. volatile acidity vs pH
+3. citric acid vs pH
+4. total acid vs pH
+
+Pearsons r:
+1. -0.6829782 
+2. 0.2349373 
+3. -0.5419041
+4. -0.6833998 
+
+And indeed 1 and the 4 are strongly negatively correlated with pH. It is a bit surprising that the third is also fairly strongly negatively correlated.
+
+```{r echo=FALSE}
+cor.test(redwine$fixed.acidity,redwine$pH,method='pearson')
+cor.test(redwine$volatile.acidity,redwine$pH,method='pearson')
+cor.test(redwine$citric.acid,redwine$pH,method='pearson')
+cor.test(redwine$totalacid,redwine$pH,method='pearson')
+
+```
+
+total.acid should be highly correlated to fixed.acidity, since the first is mostly composed of the second. Indeed r is 0.996198, and a scatterplot visually confirms this. There aren't many, or very strong, outliers from the line.
+
+```{r echo=FALSE}
+ ggplot(aes(fixed.acidity,totalacid), data = redwine) +
+  ggtitle("fixed.acidity vs totalacid") + xlab('fixed.acidity: g/dm^3') +
+  ylab('totalacid: g/dm^3') + geom_point() +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45))
+```
+
+```{r echo=FALSE}
+cor.test(redwine$fixed.acidity,redwine$totalacid,method='pearson')
+
+```
+### R and scatterplots
+
+Now let's scatterplot the following variable pairs.
+1. sugar v alcohol
+2. alcohol v density
+3. sugar v density 
+
+Pearsons r:
+1. 0.04207544
+2. -0.4961798
+3. 0.3552834
+
+For 1, correlation is very low, and the plot indeed looks random. For 2, we see the fairly strong negative correlation. For 3, it is hard to see the correlation, which is larger than 1, but still modest.
+
+```{r echo=FALSE}
+ggplot(aes(residual.sugar,alcohol), data = redwine) +
+  ggtitle("residual.sugar vs alcohol") + geom_point() + 
+  xlab('residual.sugar: g/dm^3') + ylab('alcohol: % by volume') +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45)) #+
+ # scale_x_continuous(limits=c(0,11),breaks =
+   #                    seq(0,max(redwine$totalacid),1))
+```
+```{r echo=FALSE}
+ggplot(aes(alcohol,density), data = redwine) + ggtitle("alcohol vs density") +
+  geom_point() +  xlab('alcohol: % by volume') +
+  ylab('density: residual.sugar: g/dm^3') +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45))
+```
+```{r echo=FALSE}
+ggplot(aes(residual.sugar,density), data = redwine) + 
+  ggtitle("residual.sugar vs density") +
+  xlab('residual.sugar: g/dm^3') + ylab('density: g/dm^3') + geom_point() +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45))
+```
+
+### R and scatterplots
+
+1. fixed acidity vs pH
+2. volatile acidity vs pH
+3. citric acid vs pH
+4. total acid vs pH
+
+Pearsons r:
+1. -0.6829782 
+2. 0.2349373 
+3. -0.5419041
+4. -0.6833998
+
+I will plot 1 and 4 together. They should look similar.
+Next I plot 2 and 3. 2 should look random, 3 should have a modest discernible negative slope.
+
+```{r echo=FALSE}
+one <- ggplot(aes(fixed.acidity,pH), data = redwine) +
+  ggtitle("fixed.acidity vs pH") + xlab('fixed.acidity: g/dm^3') +
+  ylab('pH') + geom_point() +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45))
+
+four <- ggplot(aes(totalacid,pH), data = redwine) + ggtitle("totalacid vs pH") +
+  geom_point() + xlab('total acid: g/dm^3') + ylab('pH') +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45))
+
+grid.arrange(one,four)
+```
+```{r echo=FALSE}
+two <- ggplot(aes(volatile.acidity,pH), data = redwine) +
+  ggtitle("volatile.acidity vs pH") + 
+  xlab('volatile.acidity: g/dm^3') + ylab('pH') + geom_point() +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45))
+
+three <- ggplot(aes(citric.acid,pH), data = redwine) +
+  ggtitle("citric.acid vs pH") + xlab('citric.acid: g/dm^3') + 
+  ylab('pH') + geom_point() +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45))
+
+grid.arrange(two,three)
+```
+
+# Bivariate Plots Section
+### Each variable v quality
+
+Now I compare quality to every other variable (columns 2-12) to quality. I also compare quality to my new variable totalacid (column 14,totalacid = 2 + 3 + 4, rounded to 0.1).
+
+I would be surprised if any of them have a very high correlation with quality. Wine making is a complex art, and if this were true, you might be able to easily improve the quality of the wine by addressing this one variable.
+
+[2] "fixed.acidity"       
+ [3] "volatile.acidity"    [4] "citric.acid"         
+ [5] "residual.sugar"      [6] "chlorides"           
+ [7] "free.sulfur.dioxide"  [8] "total.sulfur.dioxide"
+ [9] "density"              [10] "pH"                  
+[11] "sulphates"            [12] "alcohol"             
+             [14] "totalacid"  
+```{r echo=FALSE}
+colnames(redwine)
+```
+
+### R vs each variable
+
+2. 0.1240516
+3. -0.3905578 
+4. 0.2263725
+5. 0.01373164 
+6. -0.1289066
+7. -0.05065606
+8. -0.1851003
+9. -0.1749192 
+10. -0.05773139 
+11. 0.2513971
+12. 0.4761663 
+14. 0.1036382
+
+```{r echo=FALSE}
+cor.test(redwine$fixed.acidity,redwine$quality,method='pearson')
+cor.test(redwine$volatile.acidity,redwine$quality,method='pearson')
+cor.test(redwine$citric.acid,redwine$quality,method='pearson')
+cor.test(redwine$residual.sugar,redwine$quality,method='pearson')
+cor.test(redwine$chlorides,redwine$quality,method='pearson')
+cor.test(redwine$free.sulfur.dioxide,redwine$quality,method='pearson')
+cor.test(redwine$total.sulfur.dioxide,redwine$quality,method='pearson')
+cor.test(redwine$density,redwine$quality,method='pearson')
+cor.test(redwine$pH,redwine$quality,method='pearson')
+cor.test(redwine$sulphates,redwine$quality,method='pearson')
+cor.test(redwine$alcohol,redwine$quality,method='pearson')
+cor.test(redwine$totalacid,redwine$quality,method='pearson')
+```
+
+### Highest correlations
+
+3, volatile acidity, shows the highest negative corr with quality (-0.39)
+12, alcohol, has the highest positive correlation with quality (0.47).
+But these correlations are still pretty modest.
+
+So I decide I will create box plots for each of these variable, with the different wine ratings along the X axis. We might notice a different pattern with each one of them as between different wine ratings (though I am guessing not). We could, also calculate r within each of these wine ratings to see if there is a particularly high r value.
+
+###fixed.acidity
+Both high (8) and low (3) wine rating have fewer outliers. I don't know if that means anything.
+
+```{r echo=FALSE}
+ggplot(data = redwine, aes(x=quality,y=fixed.acidity,group=(quality))) + geom_boxplot() + scale_x_continuous(breaks = seq(3,8,1)) + labs(title='fixed.acidity') +
+  ylab('fixed.acidity: g/dm^3')
+```
+
+###totalacid
+Looks very much like fixed.acidity, not surprisingly
+
+```{r echo=FALSE}
+ggplot(data = redwine, aes(x=quality,y=totalacid,group=(quality))) +
+  geom_boxplot() + scale_x_continuous(breaks = seq(3,8,1)) +
+  labs(title='totalacid')  + ylab('totalacid: g/dm^3')
+```
+
+### volatile.acidity
+Aha!!! Volatile acidity goes seem to go down with higher quality wine.
+
+```{r echo=FALSE}
+ggplot(data = redwine, aes(x=quality,y=volatile.acidity,group=(quality))) +
+  geom_boxplot() + scale_x_continuous(breaks = seq(3,8,1)) +
+  labs(title='volatile.acidity') + ylab('volatile.acidity: g/dm^3')
+```
+
+### Two box plots
+Now I arbitrarily decide to bucket wines into high-quality wines (scores 7-8) and other (3-6) with box plots.
+
+```{r echo=FALSE}
+a <- ggplot(data = subset(redwine, quality <=6),
+            aes(x=quality,y=volatile.acidity)) + geom_boxplot() +
+  scale_y_continuous(limits=c(0,1)) + scale_x_continuous(breaks = seq(3,6,3)) +
+  labs(title='volatile.acidity, other, 3-6') + ylab('volatile.acidity: g/dm^3')
+b <- ggplot(data = subset(redwine, quality >=7),
+            aes(x=quality,y=volatile.acidity)) + geom_boxplot() +
+  scale_y_continuous(limits=c(0,1)) + scale_x_continuous(breaks = seq(3,6,3)) +
+  labs(title='volatile.acidity, HQ, 7-8') + ylab('volatile.acidity: g/dm^3')
+grid.arrange(a,b,ncol=2)
+```
+
+### Segregated stats
+
+Mean volatile.acidity
+7-8 wines: 0.4055
+3-6 wines: 0.547
+
+I'm guessing we would find a statistically significant difference between the two groups with respect to volatile.acidity.
+
+The r values are different too, though I'm not sure that means anything.
+
+r
+7-8 wines: -0.3148996
+3-6 wines: 0.03702191 
+
+```{r echo=FALSE}
+summary(redwine$volatile.acidity)
+summary(subset(redwine,quality<=6)$volatile.acidity)
+summary(subset(redwine,quality>=7)$volatile.acidity)
+cor.test(subset(redwine,quality<=6)$volatile.acidity,subset(redwine,quality<=6)$quality,method='pearson')
+cor.test(subset(redwine,quality>=7)$volatile.acidity,subset(redwine,quality>=7)$quality,method='pearson')
+```
+
+###citric.acid
+Not as noticeable as volatile.acid, but higher quality wines seem to have more of this fruity acid.
+
+```{r echo=FALSE}
+ggplot(data = redwine, aes(x=quality,y=citric.acid,group=(quality))) +
+  geom_boxplot() + scale_x_continuous(breaks = seq(3,8,1)) +
+  labs(title='citric.acid') + ylab('citric.acid: g/dm^3')
+```
+
+### Two box plots
+Now I arbitrarily decide to bucket wines into high-quality wines (scores 7-8) and other (3-6) with box plots.
+
+```{r echo=FALSE}
+a <- ggplot(data = subset(redwine, quality <=6),
+            aes(x=quality,y=citric.acid)) + geom_boxplot() +
+  scale_y_continuous(limits=c(0,1)) + scale_x_continuous(breaks = seq(3,6,3)) + 
+  labs(title='citric.acid 3-6') + ylab('citric.acid: g/dm^3')
+b <- ggplot(data = subset(redwine, quality >=7),
+            aes(x=quality,y=citric.acid)) + geom_boxplot() +
+  scale_y_continuous(limits=c(0,1)) + ylab('citric.acid: g/dm^3') +
+  scale_x_continuous(breaks = seq(3,6,3)) + labs(title='citric.acid 7-8')
+grid.arrange(a,b,ncol=2)
+```
+
+### Segreated statistics
+
+Mean citric.acid
+7-8 wines: 0.3765
+3-6 wines: 0.2544
+
+I'm guessing we would find a statistically significant difference between the two groups with respect to citric.acid.
+
+The r values are different too, though I'm not sure that's useful. Perhaps it means that really good wines are more complex than just more or less acid.
+
+r
+7-8 wines: 0.1161771
+3-6 wines: 0.02265598 
+
+```{r echo=FALSE}
+summary(redwine$citric.acid)
+summary(subset(redwine,quality<=6)$citric.acid)
+summary(subset(redwine,quality>=7)$citric.acid)
+cor.test(subset(redwine,quality<=6)$citric.acid,subset(redwine,quality<=6)$quality,method='pearson')
+cor.test(subset(redwine,quality>=7)$citric.acid,subset(redwine,quality>=7)$quality,method='pearson')
+```
+
+### residual.sugar
+Nothing jumps out
+
+```{r echo=FALSE}
+ggplot(data = redwine, aes(x=quality,y=residual.sugar,group=(quality))) +
+  geom_boxplot() + scale_x_continuous(breaks = seq(3,8,1)) +
+  labs(title='residual.sugar') + ylab('residual.sugar: g/dm^3')
+```
+ 
+### chlorides
+Seems to go down with higher quality wine, but not strikingly so.
+
+```{r echo=FALSE}
+ggplot(data = redwine, aes(x=quality,y=chlorides,group=(quality))) +
+  geom_boxplot() + scale_x_continuous(breaks = seq(3,8,1)) +
+  scale_y_log10(breaks = c(0.01, 0.05, 0.10, 0.15)) +
+  labs(title='chlorides') + ylab('chlorides: g/dm^3')
+```
+ 
+### free.sulfur.dioxide
+Nothing jumps out
+
+```{r echo=FALSE}
+ggplot(data = redwine, aes(x=quality,y=free.sulfur.dioxide,group=(quality))) + 
+  geom_boxplot() + scale_x_continuous(breaks = seq(3,8,1)) + 
+  scale_y_log10(breaks = c(0, 10, 25, 50, 100)) +
+  labs(title='free.sulfur.dioxide') + ylab('free.sulfur.dioxide: g/dm^3')
+```
+
+### total.sulfur.dioxide
+Nothing jumps out
+
+```{r echo=FALSE}
+ggplot(data = redwine, aes(x=quality,y=total.sulfur.dioxide,group=(quality))) + 
+  geom_boxplot() + scale_x_continuous(breaks = seq(3,8,1)) + 
+  scale_y_log10(breaks = c(10, 25, 100, 250)) +
+  labs(title='total.sulfur.dioxide') + ylab('total.sulfur.dioxide: g/dm^3')
+```
+
+### density
+Nothing jumps out
+
+```{r echo=FALSE}
+ggplot(data = redwine, aes(x=quality,y=density,group=(quality))) + geom_boxplot() + 
+  scale_x_continuous(breaks = seq(3,8,1)) + labs(title='density') +
+  ylab('density: g/dm^3')
+```
+
+### pH
+Nothing jumps out
+
+```{r echo=FALSE}
+ggplot(data = redwine, aes(x=quality,y=pH,group=(quality))) + geom_boxplot() + 
+  scale_x_continuous(breaks = seq(3,8,1)) + labs(title='pH') +
+  ylab('pH')
+```
+
+### alcohol
+Higher quality wines seem to have more alcohol!
+
+```{r echo=FALSE}
+ggplot(data = redwine, aes(x=quality,y=alcohol,group=(quality))) +
+  geom_boxplot() + scale_x_continuous(breaks = seq(3,8,1)) +
+  labs(title='alcohol') + ylab('alcohol: % by volume')
+```
+
+# Two box plots
+Now I arbitrarily decide to bucket wines into high-quality wines (scores 7-8) and other (3-6) with box plots.
+
+```{r echo=FALSE}
+a <- ggplot(data = subset(redwine, quality <=6), aes(x=quality,y=alcohol)) +
+  geom_boxplot() + scale_y_continuous(limits=c(8,12)) +
+  scale_x_continuous(breaks = seq(3,6,3)) + labs(title='alcohol 3-6') +
+  ylab('alcohol: % by volume')
+b <- ggplot(data = subset(redwine, quality >=7), aes(x=quality,y=alcohol)) +
+  geom_boxplot() + scale_y_continuous(limits=c(8,12)) +
+  scale_x_continuous(breaks = seq(3,6,3)) + labs(title='alcohol 7-8') +
+  ylab('alcohol: % by volume')
+grid.arrange(a,b,ncol=2)
+```
+### alcohol statistics
+
+Mean alcohol
+7-8 wines: 11.52
+3-6 wines: 10.25
+
+I'm guessing we would find a statistically significant difference between the two groups with respect to alcohol.
+
+The r values are different too, though I'm not sure that's useful. Perhaps it means that really good wines are more complex than just more or less alcohol.
+
+The r values are different too, though I'm not sure that's useful. Perhaps it means that really good wines are more complex than just more or less alcohol.
+
+r
+7-8 wines: 0.1740748 
+3-6 wines: 0.3061033
+
+```{r echo=FALSE}
+summary(redwine$alcohol)
+summary(subset(redwine,quality<=6)$alcohol)
+summary(subset(redwine,quality>=7)$alcohol)
+cor.test(subset(redwine,quality<=6)$alcohol,subset(redwine,quality<=6)$quality,method='pearson')
+cor.test(subset(redwine,quality>=7)$alcohol,subset(redwine,quality>=7)$quality,method='pearson')
+```
+
+# Bivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. How did the feature(s) of interest vary with other features in the dataset?
+I stated above that I would be surprised if any of them have a very high correlation with quality. Wine making is a complex art, and if this were true, you might be able to easily improve the quality of the wine by addressing this one variable. This did turn out be the case, generally, but see below.
+
+### Did you observe any interesting relationships between the other features \ (not the main feature(s) of interest)?
+The correlation between volatile.acid and quality, citric.acid and quality, and alcohol and quality, were not particularly high. However, when I split the data points into high-quality (7-8) wine and other (3-6) wine, there was a noticeable difference in the graphs and stats. This would be worth following up on with statistical analysis.
+
+### What was the strongest relationship you found?
+Quality vs these three measures. 
+
+# Multivariate Plots Section
+### Multi-variate analyses
+
+Now I take the three variables citric acid, alcohol, and volatile acidity and use the axes of X,Y,size to look at them. On top of this, I layer (1) faceting by quality and (2) overall different colors for quality. In (2) I also draw regression lines for each quality.
+
+```{r echo=FALSE}
+ggplot(redwine, aes(x=volatile.acidity,y=citric.acid)) + 
+    geom_point(aes(size=alcohol),alpha=0.1) + 
+    labs(title='Volatile x, Citric y, Alcohol size') + 
+    facet_wrap(~quality)
+```
+```{r echo=FALSE}
+ggplot(redwine, aes(x=volatile.acidity,y=citric.acid)) + 
+    geom_point(aes(color=as.factor(quality),size=alcohol), alpha=0.3) + 
+    labs(title='Volatile x, Citric y, Alcohol size') + 
+    scale_color_brewer(palette = "YlOrRd") +
+    geom_smooth(aes(color = factor(quality)), se = FALSE, method="lm") +
+    theme_dark()
+```
+
+### Observations
+I don't see much of a pattern here.3 seems to have a lot of high volatile acid point, and 8 relatively few. But 3 and 8 also have fewer data points to look at. The regression lines are all pretty similar.
+
+```{r echo=FALSE}
+ggplot(redwine, aes(x=volatile.acidity,y=alcohol)) + 
+    geom_point(aes(size=citric.acid),alpha=0.1) + 
+    labs(title='Volatile x, Alcohol y, Citric size') + 
+    facet_wrap(~quality)
+```
+```{r echo=FALSE}
+ggplot(redwine, aes(x=volatile.acidity,y=alcohol)) + 
+    geom_point(aes(color=as.factor(quality),size=citric.acid), alpha=0.3) + 
+    labs(title='Volatile x, Alcohol y, Citric size') + 
+    scale_color_brewer(palette = "YlOrRd") +
+    geom_smooth(aes(color = factor(quality)), se = FALSE, method="lm") +
+    theme_dark()
+```
+
+### Observations
+Here, the facted 3 and 8 do seem different, with 3 having high volatile.acidity points and 8 having high alcohol points. The regression lines for 3 and 8 are furthest apart on the second plots. Also, interestingly, 3 and 8 have the most similar slopes.
+
+```{r echo=FALSE}
+ggplot(redwine, aes(x=citric.acid,y=alcohol)) + 
+    geom_point(aes(size=volatile.acidity),alpha=0.1) + 
+    labs(title='Citrix x, Alcohol y, Volatile size') + 
+    facet_wrap(~quality)
+```
+
+```{r echo=FALSE}
+#ggplot(redwine, aes(x=citric.acid,y=alcohol)) + 
+ #   geom_point(aes(size=volatile.acidity,color=as.factor(quality)),alpha=0.1) + 
+  #  labs(title='Citric x, Alcohol y, Volatile size') + 
+   # scale_color_brewer(type="qual", palette="Set1") +
+  #geom_smooth(aes(color = factor(quality)), se = FALSE, method="lm")
+ggplot(redwine, aes(x=citric.acid,y=alcohol)) + 
+    geom_point(aes(color=as.factor(quality),size=volatile.acidity), alpha=0.3) + 
+    labs(title='Citric x, Alcohol y, Volatile size') + 
+    scale_color_brewer(palette = "YlOrRd") +
+    geom_smooth(aes(color = factor(quality)), se = FALSE, method="lm") +
+    theme_dark()
+```
+
+### Observations
+In the two plots above, the higher alcohol and higher citric acid in 8 are noticeable here, particularly as compared to the lower alcohol and citric acid in 3, though both have small samples sizes. AThe regression lines for 3 and 8 are furthest apart on the second plots. Also, interestingly, 3 and 8 have the most similar slopes.
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. Were there features that strengthened each other in terms of \
+looking at your feature(s) of interest?
+
+Volatile acid, citric acid, and alcohol had noticeable differences when I separated high-quality wine from the others.
+
+### Statistical significance, calculating T-score for volatile.acidity
+
+Let's analyze one of the above for statistical significance
+
+Mean volatile.acidity
+7-8 wines: 0.4055
+3-6 wines: 0.547
+Difference: 0.1415
+
+By subsetting these two groups of wine, we get 1382 wines for OTHER and 217 for HQ. We can treat these as independent samples, so we pool their SDs to get the standard error.
+The HQ wine sample has n = 217 and mean = 0.4055.
+
+Calculations below
+```{r echo=FALSE}
+HQredwine <- subset(redwine,quality>=7)
+OTHERredwine <- subset(redwine,quality<=6)
+dim(HQredwine)
+dim(OTHERredwine)
+```
+
+```{r echo=FALSE}
+SD1 <- sd(OTHERredwine$volatile.acidity)
+SD2 <- sd(HQredwine$volatile.acidity)
+cat('SD1:',SD1,'\n')
+cat('SD2:',SD2,'\n')
+# SE = pooled SD
+# SE = sqrt ( (n-1)s^2 + (n-1)s^2  / n+n-2 )
+SD_pool <- sqrt( ( 216*(SD1)^2 + 1381*(SD2)^2 ) / (217+1383-2) )
+cat('Pooled SD:',SD_pool,'\n')
+# t = x-x /  ( SE / sqrt(1/n + 1/n) ) 
+t <-  0.1415 / (SD_pool*sqrt(1/217 + 1/1382) )
+cat('t-statistic:',t,'\n')
+# df = n+n-2
+df <- 1382 + 217 - 2
+cat('df:',df,'\n')
+cat('P statistical significance: very close to 1','\n')
+```
+
+### Were there any interesting or surprising interactions between features?
+I think the colored plots worked well, in that we see the huge points right on or along the correlation lines.
+
+### OPTIONAL: Did you create any models with your dataset?
+I create a model below. As I said, I don't think it is easy to create a model for good wine, otherwise it might be easy to do biochemically. At the very least, it would require a lot of features. I will use the three features from above which seem most signficant, volatile.acidity, citric.acid, alcohol. I expect these will not make a very good model, and indeed the r we achieve in only 0.3.
+
+m1 <- lm(I(quality) ~ I(volatile.acidity), data=redwine)
+m2 <- update(m1,~.+citric.acid)
+m3 <- update(m2,~.+alcohol)
+mtable(m1,m2,m3)
+
+I also print some info on m3:
+summary(m3)
+names(m3)
+anova(m3)
+head(fitted(coef(m3))
+head(coef(m3))
+head(residuals(m3))
+
+I plot the residuals and it comes out fairly normal, as we would expect, even though the model isn't that good.
+
+```{r}
+library(memisc)
+m1 <- lm(I(quality) ~ I(volatile.acidity), data=redwine)
+m2 <- update(m1,~.+citric.acid)
+m3 <- update(m2,~.+alcohol)
+mtable(m1,m2,m3)
+```
+```{r}
+m3
+```
+```{r}
+summary(m3)
+```
+
+```{r}
+names(m3)
+```
+
+```{r}
+anova(m3)
+```
+```{r}
+head(fitted(m3))
+```
+
+```{r}
+head(coef(m3))
+```
+```{r}
+head(residuals(m3))
+```
+```{r}
+library(reshape2)
+resid <- residuals(m3)
+class(resid) <- class(resid)[-match("AsIs",class(resid))]
+resids <- melt(resid)
+ggplot(resids,aes(value)) + geom_histogram(bins=100)
+
+```
+
+------
+
+# Final Plots and Summary
+
+### Plot One
+
+```{r echo=FALSE, Plot_One}
+ggplot(data = redwine, aes(x=quality,y=volatile.acidity,group=(quality))) +
+  geom_boxplot() + scale_x_continuous(breaks = seq(3,8,1)) +
+  labs(title='Plot One: Box Plots of Volatile acidity by Wine Quality') + ylab('Volatile Acidity in g/dm^3') + xlab('Wine Quality: 3-8')
+```
+
+### Description One
+Plot one above was my first surprising findings. Up till this point I was going on a fishing expedition, since I know nothing about wine.
+
+I said: "Aha!!! Volatile acidity goes seem to go down with higher quality wine."
+
+Before seeing this plot, I thought there might not be any interesting relationships between any of the chemical features and wine uality.
+
+Regarding this set of box plots, note the difference in the means:
+Mean volatile.acidity
+7-8 wines: 0.4055
+3-6 wines: 0.547
+
+I guessed we would find a statistically significant difference between the two groups with respect to volatile.acidity, and I confirmed this by calculating a T-statistic and P (very close to 1) above.
+
+### Plot Two
+
+```{r echo=FALSE, Plot_Two}
+ ggplot(aes(fixed.acidity,totalacid), data = redwine) +
+  ggtitle("Fixed Acidity (x) vs Total Acid (y) - a new feature") + xlab('Fixed Acidity in g/dm^3') +
+  ylab('Total Acid in g/dm^3') + geom_point() +
+  theme(plot.title = element_text(hjust = 0.5,face="bold", color="#993333", 
+                                  size=12),
+        axis.text.x = element_text( color="#993333", 
+                                    size=8, angle=0),
+        axis.text.y = element_text(face="bold", color="#993333", 
+                                   size=8, angle=45))
+```
+
+### Description Two
+This plot  has the results that I expected. I saw that the Fixed Acidity amounts were about an order of magnitude greater in amount than the other acids (Volatile Acidity, Citric Acid). And we can see that the scatter plot points are all pretty much right around the line. r calculated below for Fixed Acidity and Total Acid is very close to 1. This means that in terms of absolute amounts of acid, we could just look at Fixed Acidity and ignore the other two.
+
+```{r echo=FALSE}
+cor.test(redwine$fixed.acidity,redwine$totalacid,method='pearson')
+```
+
+Now, if one of acids was much stronger than the others, then this conclusion in terms of "amount" of acid would not be useful in terms of the pH effect of the acid. We don't have any information on the relative strengths of these acids. But when I calculated r for Fixed Acidity vs pH and Total Acid vs Ph, we see the r values are almost identical. Therefore, for pH purposes, we can say that Fixed Acidity is essentially the same as Total Acid.
+-0.6829782 
+-0.6833998 
+
+------
+
+### Plot Three
+
+```{r echo=FALSE, Plot_Three}
+
+a <- ggplot(data = subset(redwine, quality <=6),
+            aes(x=quality,y=citric.acid)) + geom_boxplot() +
+  scale_y_continuous(limits=c(0,1)) + scale_x_continuous(breaks = seq(3,6,3)) + 
+  labs(title='Citric Acid for wines 3-6') + ylab('Citric Acid in g/dm^3') +
+  xlab('Low Quality Wine')
+b <- ggplot(data = subset(redwine, quality >=7),
+            aes(x=quality,y=citric.acid)) + geom_boxplot() +
+  scale_y_continuous(limits=c(0,1)) + scale_x_continuous(breaks = seq(3,6,3)) +
+  labs(title='Citric Acid for wines 7-8') + ylab('Citric Acid in g/dm^3') +
+  xlab('High Quality Wine')
+
+grid.arrange(a,b,ncol=2)
+```
+
+### Description Three
+
+While Fixed Acidity is a good proxy for Total Acid and acid pH effect, it turns out that we cannot ignore the lower quantity acids in terms of correlation with wine quality. Here we see that high quality wines have quite a bit more Citric Acid. I'm guessing we would find a statistically significant difference between these two means.
+
+
+Mean Citric Acid amounts:
+7-8 wines: 0.3765
+3-6 wines: 0.2544
+
+
+------
+
+# Reflection
+Since I know nothing about wine, this EDA was a bit of a starter fishing expedition, so I suspect that I would have to do quite a bit more EDA to some meaningful results. As long as this project is, I suspect I would have do to as much EDA again to some decent leads on what to analyze. Some general research on wine might help.
+
+One thing I am beginning to suspect is that these chemical variable shave little to do with wine quality (except perhaps at the extremes). Therefore, in a way, it is weird to have a bunch of purely chemical features such as density, and then one subject human measure, quality. I suspect that it would be more interesting to compare other variables to quality, such as varietal, growing region, year, and not so much these chemical characteristics. Also, it might be more interesting to compare within subject criteria themselves. In other words, if there are other wine quality / taste measure than simply the one, there might be more interesting data patterns in that then what we have seen with this EDA.
